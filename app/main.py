@@ -43,7 +43,8 @@ def init_web_application():
     application = FastAPI(
         openapi_url='/openapi.json',
         docs_url='/docs',
-        redoc_url='/redoc'
+        redoc_url='/redoc',
+        title="Face validation API"
     )
 
     if project_settings.LOCAL_MODE:
@@ -51,8 +52,10 @@ def init_web_application():
         register_cors(application)
 
     from app.routes.task import router as task_router
+    from app.routes.web import router as web_router
 
     application.include_router(task_router)
+    application.include_router(web_router)
 
     attach_admin_panel(application)
 

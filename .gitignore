@@ -144,3 +144,4 @@ cython_debug/
 # Pycharm
 .idea/
 images/
+proxychains.conf

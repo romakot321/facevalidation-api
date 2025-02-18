@@ -4,24 +4,56 @@ services:
   app:
     build:
       context: ./
-    container_name: template_app
+    container_name: facevalidation_app
     depends_on:
       - postgres
+      - rabbitmq
     env_file:
       - .env
     restart: always
     networks:
       global_network:
       default:
+    volumes:
+      - images:/home/python/images
+    ports:
+      - "8000:80"
+
+  cv:
+    build:
+      context: ./cv
+    container_name: facevalidation_cv
+    depends_on:
+      - rabbitmq
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - images:/home/python/images
+    networks:
+      default:
 
   postgres:
     image: postgres:latest
-    container_name: template_db
+    container_name: facevalidation_db
     restart: always
     env_file:
       - .env
     networks:
       default:
+    ports:
+      - "5432:5432"  # RabbitMQ default port
+
+  rabbitmq:
+    image: rabbitmq:management
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq  # Persist data
+    networks:
+      default:
+
+volumes:
+  rabbitmq_data:
+  images:
 
 networks:
   global_network:

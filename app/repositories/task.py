@@ -23,6 +23,7 @@ class TaskRepository[Table: Task, int](BaseRepository):
     async def get(self, model_id: UUID) -> Task:
         return await self._get_one(
             id=model_id,
+            select_in_load=Task.items
         )
 
     async def update(self, model_id: UUID, **fields) -> Task:

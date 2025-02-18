@@ -41,7 +41,17 @@ class TaskItem(Base):
 
     id: M[int] = column(primary_key=True, index=True, autoincrement=True)
     task_id: M[UUID] = column(ForeignKey('tasks.id', ondelete="CASCADE"))
-    result: M[str | None] = column(nullable=True)
+
+    left_eye_close: M[float]
+    right_eye_close: M[float]
+    is_eyes_closed: M[bool]
+    face_left: M[int]
+    face_top: M[int]
+    face_bottom: M[int]
+    face_right: M[int]
+    is_face_small: M[bool]
+    image_width: M[int]
+    image_height: M[int]
 
     task: M['Task'] = relationship(back_populates='items')
 
