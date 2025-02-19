@@ -22,7 +22,7 @@ services:
   cv:
     build:
       context: ./cv
-    container_name: facevalidation_cv
+      # container_name: facevalidation_cv
     depends_on:
       - rabbitmq
     env_file:

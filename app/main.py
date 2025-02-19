@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi import status
 from fastapi.exceptions import RequestValidationError
@@ -8,6 +9,8 @@ from loguru import logger
 from contextlib import asynccontextmanager
 
 from app.db.admin import attach_admin_panel
+from app.repositories.cv import CVRepository
+from app.services.task import TaskService
 
 
 class ProjectSettings(BaseSettings):
@@ -38,13 +41,20 @@ def register_cors(application):
     )
 
 
+@asynccontextmanager
+async def lifespan(application):
+    asyncio.create_task(CVRepository.listen_responses(TaskService.save_cv_response))
+    yield
+
+
 def init_web_application():
     project_settings = ProjectSettings()
     application = FastAPI(
         openapi_url='/openapi.json',
         docs_url='/docs',
         redoc_url='/redoc',
-        title="Face validation API"
+        title="Face validation API",
+        lifespan=lifespan
     )
 
     if project_settings.LOCAL_MODE:

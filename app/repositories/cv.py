@@ -5,7 +5,7 @@ from loguru import logger
 from aio_pika import connect_robust, Message, Queue
 from pydantic import BaseModel
 
-from app.db.rabbitmq import get_rabbitmq_queue
+from app.db.rabbitmq import get_rabbitmq_queue, channel_pool
 from app.schemas.cv import CVResponse, CVRequest
 
 
@@ -28,23 +28,26 @@ class CVRepository:
             message, routing_key="cv_requests"
         )
 
-    async def _receive(self) -> list[dict]:
-        async with self.responses_queue.iterator() as queue_iter:
-            async for response in queue_iter:
-                logger.debug(response)
-                async with response.process():
-                    logger.debug(response.body)
-                    return json.loads(response.body)
-
-    async def process_image(self, filename: str) -> list[CVResponse]:
+    async def process_image(self, filename: str):
         await self._send(filename)
+        return
         response = await self._receive()
-        response = [CVResponse.model_validate(response) for response in response]
         logger.debug(f"Response: {response}")
         assert all(resp.filename == filename for resp in response), "Not all responses for requested filename: " + str(response)
         return response
 
+    @classmethod
+    async def listen_responses(cls, callback):
+        async with channel_pool.acquire() as channel:
+            queue = await channel.declare_queue(
+                "cv_responses", durable=True
+            )
 
-if __name__ == "__main__":
-    asyncio.run(send_message())
+            async with queue.iterator() as queue_iter:
+                async for response in queue_iter:
+                    async with response.process():
+                        body = json.loads(response.body)
+                        logger.debug(body)
+                        body = [CVResponse.model_validate(response) for response in body]
+                        await callback(body)
 

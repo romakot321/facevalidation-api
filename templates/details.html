@@ -5,19 +5,38 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Details</title>
     </head>
-    <body>
-        <h1>Задача {{ task.id }}</h1>
-        {% for item in task.items %}
-        <ul>
-            <li>Лицо {{ item.id }}</li>
-            <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
-            <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
-            <li>Координаты лица: X1 Y1={{ item.face_left }} {{ item.face_top }}, X2 Y2={{ item.face_right }} {{ item.face_bottom }}</li>
-            <li>Закрытость глаз: Левый: {{ item.left_eye_close }}, Правый: {{ item.right_eye_close }}</li>
-            <li>Размер картинки: {{ item.image_width }}x{{ item.image_height }}</li>
-        </ul>
-        {% endfor %}
+    <body style="padding: 1%; display: flex; gap: 10px; flex-flow: row wrap; align-items: center;">
+        <div style="flex: 4; text-align: center;">
+            <h1>Задача {{ task.id }}</h1>
+            {% for item in task.items %}
+            <ul style="text-align: start">
+                <li>Лицо {{ item.id }}</li>
+                <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
+                <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
+                <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
+                <li>Координаты лица: X1 Y1={{ item.face_left }} {{ item.face_top }}, X2 Y2={{ item.face_right }} {{ item.face_bottom }}</li>
+                <li>Закрытость глаз: Левый: {{ item.left_eye_close }}, Правый: {{ item.right_eye_close }}</li>
+                <li>Размер картинки: {{ item.image_width }}x{{ item.image_height }}</li>
+            </ul>
+            {% endfor %}
 
-        <a href="/panel">Обратно</a>
+	<a style="padding: 10px; margin: 0 auto; border: 1px black solid; border-radius: 8px; text-decoration: none; text-align: center; display: inline-block;" href="/panel">Обратно</a>
+        </div>
+
+        <img src="data:image/jpeg;base64,{{ image | safe }}" style="flex: 1; max-width: 60%;" />
     </body>
+
+<style>
+* {
+    font-family: sans-serif;
+    font-size: 1.05em;
+}
+</style>
+
+{% if task.items|length == 0 %}
+<script>
+setTimeout(() => window.location.reload(), 2000);
+</script>
+{% endif %}
+
 </html>

@@ -9,13 +9,13 @@ rabbitmq_host = os.getenv("RABBITMQ_HOST")
 async def _get_connection() -> AbstractRobustConnection:
     return await aio_pika.connect_robust(f"amqp://guest:guest@{rabbitmq_host}/")
 
-connection_pool: Pool = Pool(_get_connection, max_size=2)
+connection_pool: Pool = Pool(_get_connection, max_size=20)
 
 async def _get_channel() -> aio_pika.Channel:
     async with connection_pool.acquire() as connection:
         return await connection.channel()
 
-channel_pool: Pool = Pool(_get_channel, max_size=10)
+channel_pool: Pool = Pool(_get_channel, max_size=50)
 
 
 async def get_rabbitmq_channel() -> aio_pika.Channel:

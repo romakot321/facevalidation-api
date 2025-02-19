@@ -11,6 +11,7 @@
 # specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
 
 # imports
+from io import BytesIO
 import os
 import face_recognition
 import cv2
@@ -18,6 +19,8 @@ import pika
 from scipy.spatial import distance as dist
 import dataclasses
 import json
+from PIL import Image
+import numpy as np
 
 images_directory = "images/"
 rabbitmq_host = os.getenv("RABBITMQ_HOST")
@@ -30,6 +33,7 @@ class Response:
     right_eye_close: float
     face_location: list[int]
     image_size: list[int]
+    glasses: bool
 
 
 @dataclasses.dataclass
@@ -61,10 +65,32 @@ def get_eye(eye):
     return eye
 
 
+def define_glasses(image_buffer: BytesIO, landmarks: dict):
+    xmin = min(landmarks['nose_tip'], key=lambda i: i[0])[0]
+    xmax = max(landmarks['nose_tip'], key=lambda i: i[0])[0]
+    ymin = min(landmarks['left_eyebrow'], key=lambda i: i[1])[1]
+    ymax = max(landmarks['nose_bridge'], key=lambda i: i[1])[1]
+
+    img2 = Image.open(image_buffer)
+    img2 = img2.crop((xmin, ymin, xmax, ymax))
+
+    img_blur = cv2.GaussianBlur(np.array(img2),(3,3), sigmaX=0, sigmaY=0)
+    edges = cv2.Canny(image=img_blur, threshold1=100, threshold2=200)
+
+    edges_center = edges.T[(int(len(edges.T)/2))]
+
+    return 255 in edges_center
+
+
 def recognize(filename: str) -> list[Response]:
-    img = face_recognition.load_image_file(images_directory + filename)
+    with open(images_directory + filename, 'rb') as f:
+        buffer = BytesIO(f.read())
+    img = face_recognition.load_image_file(buffer)
+    buffer.seek(0)
     responses = []
     face_location_list = face_recognition.face_locations(img)
+    if not face_location_list:
+        return []
     face_landmarks_list = face_recognition.face_landmarks(img)
 
     # get eyes
@@ -74,13 +100,15 @@ def recognize(filename: str) -> list[Response]:
 
         eye_left = get_eye(left_eye)
         eye_right = get_eye(right_eye)
+        glasses = define_glasses(buffer, landmark)
         responses.append(
             Response(
                 filename=filename,
                 left_eye_close=eye_left,
                 right_eye_close=eye_right,
                 face_location=location,
-                image_size=img.shape[:2]
+                image_size=img.shape[:2],
+                glasses=glasses
             )
         )
     return responses

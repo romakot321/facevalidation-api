@@ -30,4 +30,4 @@ ENV PATH="$PATH:/home/python/.local/bin"
 CMD cd app/db && \
     alembic -c ./alembic.prod.ini upgrade head && \
     cd /home/python && \
-    gunicorn app.main:fastapi_app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:80 --forwarded-allow-ips="*"
+    gunicorn app.main:fastapi_app -w 16 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:80 --forwarded-allow-ips="*"

@@ -6,13 +6,19 @@
         <title>Index</title>
     </head>
     <body>
-        <form id="form" method="POST" action="/api/task">
-            <label for="file">Выберите фото</label>
+        <form id="form" method="POST" action="/api/task" style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-flow: column;">
+            <h1>Выберите фото</h1>
             <input type="file" id="file" name="file" required>
             </br>
-            <input type="submit" value="Отправить">
+            <input type="submit" value="Отправить" style="background-color: none; border: 1px solid black; border-radius: 8px; width: 15%; height: 58px; font-size: 1.2rem;">
         </form>
     </body>
+
+<style>
+* {
+    font-family: sans-serif;
+}
+</style>
 
     <script>
         document.getElementById('form').addEventListener('submit', async function(event) {
@@ -39,3 +45,4 @@
         });
     </script>
 </html>
+

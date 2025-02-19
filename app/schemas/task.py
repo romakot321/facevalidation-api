@@ -12,6 +12,7 @@ class TaskItemSchema(BaseModel):
     face_right: int
     image_width: int
     image_height: int
+    with_glasses: bool
 
     @computed_field
     @property
