@@ -3,12 +3,13 @@ from pydantic import BaseModel
 
 class CVResponse(BaseModel):
     filename: str
-    left_eye_close: float
-    right_eye_close: float
-    face_location: list[int]
-    image_size: list[int]
-    glasses: bool
     task_id: str
+    left_eye_close: float | None = None
+    right_eye_close: float | None = None
+    face_location: list[int] | None = None
+    image_size: list[int] | None = None
+    glasses: bool | None = None
+    error: str | None = None
 
 
 class CVRequest(BaseModel):

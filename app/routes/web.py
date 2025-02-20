@@ -15,8 +15,10 @@ templates = Jinja2Templates(directory="templates")
 @router.get("", response_class=HTMLResponse)
 async def index_page(
         request: Request,
+        task_service: TaskService = Depends()
 ):
-    return templates.TemplateResponse("index.html", {"request": request})
+    tasks = await task_service.get_list()
+    return templates.TemplateResponse("index.html", {"request": request, "tasks": tasks})
 
 
 @router.get("/{task_id}", response_class=HTMLResponse)

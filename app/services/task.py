@@ -10,7 +10,7 @@ from app.repositories.cv import CVRepository
 from app.repositories.task import TaskRepository
 from app.repositories.task_item import TaskItemRepository
 from app.schemas.cv import CVResponse
-from app.schemas.task import TaskItemSchema, TaskSchema
+from app.schemas.task import TaskItemSchema, TaskItemShortSchema, TaskSchema, TaskShortSchema
 
 
 class TaskService:
@@ -31,6 +31,10 @@ class TaskService:
         model = Task()
         return await self.task_repository.create(model)
 
+    async def get_list(self, count: int = 100, page: int = 0) -> list[TaskShortSchema]:
+        models = await self.task_repository.list(page=page, count=count)
+        return [TaskShortSchema.model_validate(model) for model in models]
+
     async def send(self, task_id: UUID, image_raw: bytes, image_index: int, cv_repository: CVRepository):
         image_filename = f"{task_id}:{image_index}"
         self.image_repository.store(image_raw, image_filename)
@@ -46,12 +50,17 @@ class TaskService:
         if not response:
             return
         task_items = [
-            TaskItemSchema(left_eye_close=face.left_eye_close, right_eye_close=face.right_eye_close,
+            (
+                TaskItemSchema(left_eye_close=face.left_eye_close, right_eye_close=face.right_eye_close,
                            face_left=face.face_location[3], face_top=face.face_location[0],
                            face_right=face.face_location[1], face_bottom=face.face_location[2],
                            image_width=face.image_size[0], image_height=face.image_size[1],
                            with_glasses=face.glasses, task_id=face.task_id,
-                           image_index=int(face.filename.split(":")[1]))
+                           image_index=int(face.filename.split(":")[1]),
+                           error=face.error)
+                if face.image_size is not None else
+                TaskItemSchema(task_id=face.task_id, image_index=int(face.filename.split(":")[1]), error=face.error)
+            )
             for face in response
         ]
         task_items = [TaskItem(**schema.model_dump()) for schema in task_items]

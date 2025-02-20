@@ -12,6 +12,28 @@
             </br>
             <input type="submit" value="Отправить" style="background-color: none; border: 1px solid black; border-radius: 8px; width: 15%; height: 58px; font-size: 1.2rem;">
         </form>
+
+        <div style="margin-top: 5vh; display: flow; flex-row: column;">
+            {% for task in tasks %}
+            <div>
+                <a href="/panel/{{ task.id }}">Задача {{ task.id }}</a>
+                {% for item in task.items %}
+                    {% if not task.error is none %}
+                        <p>Лицо не найдено</p>
+                    {% else %}
+                        <ul style="text-align: start">
+                            <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
+                            <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
+                            <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
+                            {% if not item.is_good is none %}
+                                <li>Лайк: {{ item.is_good }} {{ '✅' if item.is_good else '❌'}}</li>
+                            {% endif %}
+                        </ul>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
     </body>
 
 <style>

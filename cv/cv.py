@@ -29,12 +29,13 @@ rabbitmq_host = os.getenv("RABBITMQ_HOST")
 @dataclasses.dataclass
 class Response:
     filename: str
-    left_eye_close: float
-    right_eye_close: float
-    face_location: list[int]
-    image_size: list[int]
-    glasses: bool
     task_id: str
+    error: str | None = None
+    left_eye_close: float | None = None
+    right_eye_close: float | None = None
+    face_location: list[int] | None = None
+    image_size: list[int] | None = None
+    glasses: bool | None = None
 
 
 @dataclasses.dataclass
@@ -92,7 +93,7 @@ def recognize(filename: str, task_id: str) -> list[Response]:
     responses = []
     face_location_list = face_recognition.face_locations(img)
     if not face_location_list:
-        return []
+        return [Response(filename=filename, task_id=task_id, error="Face not found")]
     face_landmarks_list = face_recognition.face_landmarks(img)
 
     # get eyes

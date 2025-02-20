@@ -9,16 +9,21 @@
         <div style="flex: 4; text-align: center;">
             <a style="padding: 10px; margin: 0 auto; border: 1px black solid; border-radius: 8px; text-decoration: none; text-align: center; display: inline-block;" href="/panel">Обратно</a>
             <h1>Задача {{ task.id }}</h1>
+
             {% for item in task.items %}
-                <ul style="text-align: start">
-                    <li>Лицо {{ item.id }}</li>
-                    <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
-                    <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
-                    <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
-                    <li>Координаты лица: X1 Y1={{ item.face_left }} {{ item.face_top }}, X2 Y2={{ item.face_right }} {{ item.face_bottom }}</li>
-                    <li>Закрытость глаз: Левый: {{ item.left_eye_close }}, Правый: {{ item.right_eye_close }}</li>
-                    <li>Размер картинки: {{ item.image_width }}x{{ item.image_height }}</li>
-                </ul>
+                {% if item.error is not none %}
+                    <p color="red">Лицо на фотографии не обнаружено</p>
+                {% else %}
+                    <ul style="text-align: start">
+                        <li>Лицо {{ item.id }}</li>
+                        <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
+                        <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
+                        <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
+                        <li>Координаты лица: X1 Y1={{ item.face_left }} {{ item.face_top }}, X2 Y2={{ item.face_right }} {{ item.face_bottom }}</li>
+                        <li>Закрытость глаз: Левый: {{ item.left_eye_close }}, Правый: {{ item.right_eye_close }}</li>
+                        <li>Размер картинки: {{ item.image_width }}x{{ item.image_height }}</li>
+                    </ul>
+                {% endif %}
 
                 <img src="data:image/jpeg;base64,{{ images[loop.index0] | safe }}" style="flex: 1; max-width: 60%;" />
                 <button id="buttonvote-{{ item.id }}-0" onclick="sendNewVote(event);">-</button>

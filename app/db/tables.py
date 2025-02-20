@@ -42,19 +42,20 @@ class TaskItem(Base):
     id: M[int] = column(primary_key=True, index=True, autoincrement=True)
     task_id: M[UUID] = column(ForeignKey('tasks.id', ondelete="CASCADE"))
 
-    left_eye_close: M[float]
-    right_eye_close: M[float]
-    is_eyes_closed: M[bool]
-    face_left: M[int]
-    face_top: M[int]
-    face_bottom: M[int]
-    face_right: M[int]
-    is_face_small: M[bool]
-    image_width: M[int]
-    image_height: M[int]
-    with_glasses: M[bool] = column(server_default=false(), default=False)
-    image_index: M[int]
+    left_eye_close: M[float | None]
+    right_eye_close: M[float | None]
+    is_eyes_closed: M[bool | None]
+    face_left: M[int | None]
+    face_top: M[int | None]
+    face_bottom: M[int | None]
+    face_right: M[int | None]
+    is_face_small: M[bool | None]
+    image_width: M[int | None]
+    image_height: M[int | None]
+    with_glasses: M[bool | None] = column(server_default=false(), default=False)
+    image_index: M[int | None]
     is_good: M[bool | None]
+    error: M[str | None] = column(nullable=True)
 
     task: M['Task'] = relationship(back_populates='items')
 
