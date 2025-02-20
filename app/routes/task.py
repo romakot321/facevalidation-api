@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 from uuid import UUID
 
+from app.schemas.task import TaskSchema
 from app.services.task import TaskService
 from . import validate_api_token
 
@@ -8,14 +9,15 @@ from . import validate_api_token
 router = APIRouter(prefix="/api/task", tags=["Face Validation Task"])
 
 
-@router.post("")
+@router.post("", response_model=TaskSchema)
 async def create_validation_task(
         background_tasks: BackgroundTasks,
-        file: UploadFile = File(),
+        file: list[UploadFile],
         service: TaskService = Depends()
 ):
     model = await service.create()
-    background_tasks.add_task(service.send, model.id, await file.read())
+    for i, f in enumerate(file):
+        background_tasks.add_task(service.send, model.id, await f.read(), i)
     return model
 
 

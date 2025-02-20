@@ -53,6 +53,8 @@ class TaskItem(Base):
     image_width: M[int]
     image_height: M[int]
     with_glasses: M[bool] = column(server_default=false(), default=False)
+    image_index: M[int]
+    is_good: M[bool | None]
 
     task: M['Task'] = relationship(back_populates='items')
 

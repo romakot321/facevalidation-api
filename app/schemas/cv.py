@@ -8,7 +8,10 @@ class CVResponse(BaseModel):
     face_location: list[int]
     image_size: list[int]
     glasses: bool
+    task_id: str
 
 
 class CVRequest(BaseModel):
     filename: str
+    task_id: str
+

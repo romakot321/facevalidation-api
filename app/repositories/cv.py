@@ -18,8 +18,8 @@ class CVRepository:
         self.requests_queue = requests_queue
         self.responses_queue = responses_queue
 
-    async def _send(self, filename: str):
-        request = CVRequest(filename=filename).model_dump_json()
+    async def _send(self, filename: str, task_id: str):
+        request = CVRequest(filename=filename, task_id=task_id).model_dump_json()
         message = Message(
             body=request.encode(),
             reply_to=self.responses_queue.name
@@ -28,8 +28,8 @@ class CVRepository:
             message, routing_key="cv_requests"
         )
 
-    async def process_image(self, filename: str):
-        await self._send(filename)
+    async def process_image(self, filename: str, task_id: str):
+        await self._send(filename, task_id)
         return
         response = await self._receive()
         logger.debug(f"Response: {response}")

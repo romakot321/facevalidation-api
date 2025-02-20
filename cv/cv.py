@@ -34,11 +34,13 @@ class Response:
     face_location: list[int]
     image_size: list[int]
     glasses: bool
+    task_id: str
 
 
 @dataclasses.dataclass
 class Request:
     filename: str
+    task_id: str
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -82,7 +84,7 @@ def define_glasses(image_buffer: BytesIO, landmarks: dict):
     return 255 in edges_center
 
 
-def recognize(filename: str) -> list[Response]:
+def recognize(filename: str, task_id: str) -> list[Response]:
     with open(images_directory + filename, 'rb') as f:
         buffer = BytesIO(f.read())
     img = face_recognition.load_image_file(buffer)
@@ -108,7 +110,8 @@ def recognize(filename: str) -> list[Response]:
                 right_eye_close=eye_right,
                 face_location=location,
                 image_size=img.shape[:2],
-                glasses=glasses
+                glasses=glasses,
+                task_id=task_id
             )
         )
     return responses
@@ -120,7 +123,7 @@ def callback(ch, method, properties, body):
         request = Request(**json.loads(body))
     except Exception:
         return
-    responses = recognize(request.filename)
+    responses = recognize(request.filename, request.task_id)
     print("[*] Response: " + str(responses))
     ch.basic_publish(
         exchange='',

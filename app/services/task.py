@@ -8,6 +8,7 @@ from app.db.tables import Task, TaskItem
 from app.repositories.image import ImageRepository
 from app.repositories.cv import CVRepository
 from app.repositories.task import TaskRepository
+from app.repositories.task_item import TaskItemRepository
 from app.schemas.cv import CVResponse
 from app.schemas.task import TaskItemSchema, TaskSchema
 
@@ -17,23 +18,27 @@ class TaskService:
             self,
             cv_repository: CVRepository = Depends(),
             task_repository: TaskRepository = Depends(),
+            task_item_repository: TaskItemRepository = Depends(),
             image_repository: ImageRepository = Depends()
     ):
         self.cv_repository = cv_repository
         self.task_repository = task_repository
+        self.task_item_repository = task_item_repository
         self.image_repository = image_repository
 
+    async def item_vote(self, item_id: int, value: bool):
+        await self.task_item_repository.update(item_id, is_good=value)
+
     async def create(self) -> TaskSchema:
-        logger.debug("Creating task model...")
         model = Task()
         return await self.task_repository.create(model)
 
-    async def send(self, task_id: UUID, image_raw: bytes):
-        filename = str(task_id)
-        self.image_repository.store(image_raw, filename)
+    async def send(self, task_id: UUID, image_raw: bytes, image_index: int):
+        image_filename = f"{task_id}:{image_index}"
+        self.image_repository.store(image_raw, image_filename)
 
         try:
-            response = await self.cv_repository.process_image(filename)
+            response = await self.cv_repository.process_image(image_filename, str(task_id))
         except Exception as e:
             logger.exception(e)
             await self.task_repository.update(task_id, error=str(e))
@@ -47,10 +52,11 @@ class TaskService:
                            face_left=face.face_location[3], face_top=face.face_location[0],
                            face_right=face.face_location[1], face_bottom=face.face_location[2],
                            image_width=face.image_size[0], image_height=face.image_size[1],
-                           with_glasses=face.glasses)
+                           with_glasses=face.glasses, task_id=face.task_id,
+                           image_index=int(face.filename.split(":")[1]))
             for face in response
         ]
-        task_items = [TaskItem(**schema.model_dump(), task_id=response[0].filename) for schema in task_items]
+        task_items = [TaskItem(**schema.model_dump()) for schema in task_items]
         logger.debug(f"Saving {len(task_items)} items")
         await self.task_repository.create_items(*task_items)
 
@@ -60,14 +66,11 @@ class TaskService:
 
     @classmethod
     async def save_cv_response(cls, response: list[CVResponse]):
-        logger.debug("Getting session...")
         session_getter = get_db_session()
         session = await anext(session_getter)
         self = cls(cv_repository=None, image_repository=None, task_repository=TaskRepository(session=session))
 
-        logger.debug("Start cv saving...")
         await self._save_cv_response(response)
-        logger.debug("CV Saved")
 
         try:
             await anext(session_getter)

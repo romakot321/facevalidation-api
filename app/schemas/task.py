@@ -13,6 +13,8 @@ class TaskItemSchema(BaseModel):
     image_width: int
     image_height: int
     with_glasses: bool
+    task_id: UUID | str
+    image_index: int
 
     @computed_field
     @property
