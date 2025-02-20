@@ -10,6 +10,8 @@ class TaskItemShortSchema(BaseModel):
     is_face_small: bool | None = None
     with_glasses: bool | None = None
     image_index: int | None = None
+    error: str | None = None
+    is_good: bool | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,6 +37,8 @@ class TaskItemSchema(BaseModel):
     with_glasses: bool | None = None
     task_id: UUID | str | None = None
     image_index: int | None = None
+    error: str | None = None
+    is_good: bool | None = None
 
     @computed_field
     @property

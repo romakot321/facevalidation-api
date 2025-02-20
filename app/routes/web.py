@@ -32,9 +32,10 @@ async def details_page(
     images = []
     for item in model.items:
         image_buffer = image_repository.get(str(model.id) + ":" + str(item.image_index))
-        image_buffer = image_repository.draw_rect(
-            image_buffer, (item.face_left, item.face_top, item.face_right, item.face_bottom)
-        )
+        if item.face_left is not None:
+            image_buffer = image_repository.draw_rect(
+                image_buffer, (item.face_left, item.face_top, item.face_right, item.face_bottom)
+            )
         image_encoded = b64encode(image_buffer.getvalue()).decode("utf-8")
         images.append(image_encoded)
     return templates.TemplateResponse("details.html", {"request": request, "task": model, "images": images})

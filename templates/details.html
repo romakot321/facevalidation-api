@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Details</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     </head>
     <body style="padding: 1%; display: flex; gap: 10px; flex-flow: row wrap; align-items: center;">
         <div style="flex: 4; text-align: center;">
@@ -19,6 +20,7 @@
                         <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
                         <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
                         <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
+                        <li>Лайк:  {{ '✅' if item.is_good else '❌'}}</li>
                         <li>Координаты лица: X1 Y1={{ item.face_left }} {{ item.face_top }}, X2 Y2={{ item.face_right }} {{ item.face_bottom }}</li>
                         <li>Закрытость глаз: Левый: {{ item.left_eye_close }}, Правый: {{ item.right_eye_close }}</li>
                         <li>Размер картинки: {{ item.image_width }}x{{ item.image_height }}</li>
@@ -26,8 +28,9 @@
                 {% endif %}
 
                 <img src="data:image/jpeg;base64,{{ images[loop.index0] | safe }}" style="flex: 1; max-width: 60%;" />
-                <button id="buttonvote-{{ item.id }}-0" onclick="sendNewVote(event);">-</button>
-                <button id="buttonvote-{{ item.id }}-1" onclick="sendNewVote(event);">+</button>
+                <br>
+                <button id="buttonvote-{{ item.id }}-1" onclick="sendNewVote(event);" class="btn {{ 'green' if item.is_good else '' }}"><i id="icon-{{ item.id }}-1" class="fa fa-thumbs-up fa-lg" aria-hidden="true"></i></button>
+                <button id="buttonvote-{{ item.id }}-0" onclick="sendNewVote(event);" class="btn {{ 'red' if not item.is_good else '' }}"><i id="icon-{{ item.id }}-0" class="fa fa-thumbs-down fa-lg" aria-hidden="true"></i></button>
             {% endfor %}
 
         </div>
@@ -37,6 +40,24 @@
 * {
     font-family: sans-serif;
     font-size: 1.05em;
+}
+button{
+  cursor: pointer;
+  outline: 0;
+  color: #AAA;
+  padding: 10px;
+}
+
+.btn:focus {
+  outline: none;
+}
+
+.green{
+  color: green;
+}
+
+.red{
+  color: red;
 }
 </style>
 
@@ -49,14 +70,18 @@ setTimeout(() => window.location.reload(), 2000);
 <script>
     async function sendNewVote(event) {
         let info = event.target.id.split("-");
+        let value = +info[2];
+        console.log(event.target.id);
 
         try {
-            const response = await fetch('/panel/{{task.id}}/vote/' + info[1] + '?value=' + +info[2], {
+            const response = await fetch('/panel/{{task.id}}/vote/' + info[1] + '?value=' + value, {
                 method: 'POST',
             });
 
             if (response.ok) {
                 console.log(response);
+                window.location.hash = event.target.id;
+                window.location.reload();
             } else {
                 console.error(response);
             }
