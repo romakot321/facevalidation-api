@@ -16,12 +16,10 @@ from app.schemas.task import TaskItemSchema, TaskSchema
 class TaskService:
     def __init__(
             self,
-            cv_repository: CVRepository = Depends(),
             task_repository: TaskRepository = Depends(),
             task_item_repository: TaskItemRepository = Depends(),
             image_repository: ImageRepository = Depends()
     ):
-        self.cv_repository = cv_repository
         self.task_repository = task_repository
         self.task_item_repository = task_item_repository
         self.image_repository = image_repository
@@ -33,12 +31,12 @@ class TaskService:
         model = Task()
         return await self.task_repository.create(model)
 
-    async def send(self, task_id: UUID, image_raw: bytes, image_index: int):
+    async def send(self, task_id: UUID, image_raw: bytes, image_index: int, cv_repository: CVRepository):
         image_filename = f"{task_id}:{image_index}"
         self.image_repository.store(image_raw, image_filename)
 
         try:
-            response = await self.cv_repository.process_image(image_filename, str(task_id))
+            await cv_repository.process_image(image_filename, str(task_id))
         except Exception as e:
             logger.exception(e)
             await self.task_repository.update(task_id, error=str(e))
@@ -68,7 +66,7 @@ class TaskService:
     async def save_cv_response(cls, response: list[CVResponse]):
         session_getter = get_db_session()
         session = await anext(session_getter)
-        self = cls(cv_repository=None, image_repository=None, task_repository=TaskRepository(session=session))
+        self = cls(image_repository=None, task_repository=TaskRepository(session=session))
 
         await self._save_cv_response(response)
 
