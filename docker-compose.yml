@@ -12,17 +12,17 @@ services:
       - .env
     restart: always
     networks:
-      global_network:
       default:
     volumes:
       - images:/home/python/images
     ports:
-      - "8000:80"
+      - "7998:80"
 
   cv:
     build:
       context: ./cv
-      # container_name: facevalidation_cv
+      dockerfile: ./cv/cpu.Dockerfile
+      # dockerfile: ./cv/gpu.Dockerfile
     depends_on:
       - rabbitmq
     env_file:
@@ -41,8 +41,6 @@ services:
       - .env
     networks:
       default:
-    ports:
-      - "5432:5432"  # RabbitMQ default port
 
   rabbitmq:
     image: rabbitmq:management
@@ -56,5 +54,4 @@ volumes:
   images:
 
 networks:
-  global_network:
-    external: true
+  default:
