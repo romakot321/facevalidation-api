@@ -1,17 +1,5 @@
-#!/usr/bin/env python3
-
-
-# This is a demo of detecting eye status from the users camera. If the users eyes are closed for EYES_CLOSED seconds, the system will start printing out "EYES CLOSED"
-# to the terminal until the user presses and holds the spacebar to acknowledge
-
-# this demo must be run with sudo privileges for the keyboard module to work
-
-# PLEASE NOTE: This example requires OpenCV (the `cv2` library) to be installed only to read from your webcam.
-# OpenCV is *not* required to use the face_recognition library. It's only required if you want to run this
-# specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
-
-# imports
 from io import BytesIO
+import math
 import os
 import face_recognition
 import cv2
@@ -21,6 +9,7 @@ import dataclasses
 import json
 from PIL import Image
 import numpy as np
+from typing import Union, List
 
 images_directory = "images/"
 rabbitmq_host = os.getenv("RABBITMQ_HOST")
@@ -30,12 +19,13 @@ rabbitmq_host = os.getenv("RABBITMQ_HOST")
 class Response:
     filename: str
     task_id: str
-    error: str | None = None
-    left_eye_close: float | None = None
-    right_eye_close: float | None = None
-    face_location: list[int] | None = None
-    image_size: list[int] | None = None
-    glasses: bool | None = None
+    error: Union[str, None] = None
+    left_eye_close: Union[float, None] = None
+    right_eye_close: Union[float, None] = None
+    face_location: Union[List[int], None] = None
+    image_size: Union[List[int], None] = None
+    rotation: Union[float, None] = None
+    glasses: Union[bool, None] = None
 
 
 @dataclasses.dataclass
@@ -85,33 +75,51 @@ def define_glasses(image_buffer: BytesIO, landmarks: dict):
     return 255 in edges_center
 
 
-def recognize(filename: str, task_id: str) -> list[Response]:
+def get_rotation(face_landmarks) -> float:
+    """if abs(rotation) > 0.3, then face is rotated too much"""
+    left, right = (min(face_landmarks['chin'], key=lambda i: i[0]), max(face_landmarks['chin'], key=lambda i: i[0]))
+    left_eye_left = min(face_landmarks['left_eye'], key=lambda i: i[0])
+    right_eye_right = max(face_landmarks['right_eye'], key=lambda i: i[1])
+    width = right[0] - left[0]
+    distance_left = ((left_eye_left[0] - left[0]) ** 2 + (left_eye_left[1] - left[1]) ** 2) ** 0.5 / width
+    distance_right = ((right_eye_right[0] - right[0]) ** 2 + (right_eye_right[1] - right[1]) ** 2) ** 0.5 / width
+    rotate = 1 - distance_left / distance_right
+    return rotate
+
+
+def recognize(filename: str, task_id: str) -> List[Response]:
+    responses = []
     with open(images_directory + filename, 'rb') as f:
         buffer = BytesIO(f.read())
     img = face_recognition.load_image_file(buffer)
-    buffer.seek(0)
-    responses = []
-    face_location_list = face_recognition.face_locations(img)
-    if not face_location_list:
-        return [Response(filename=filename, task_id=task_id, error="Face not found")]
-    face_landmarks_list = face_recognition.face_landmarks(img)
+    image_width, image_height, _ = img.shape
 
-    # get eyes
-    for landmark, location in zip(face_landmarks_list, face_location_list):
+    face_landmarks_list = face_recognition.face_landmarks(img)
+    if not face_landmarks_list:
+        return [Response(filename=filename, task_id=task_id, error="Face not found")]
+
+    for landmark in face_landmarks_list:
         left_eye = landmark['left_eye']
         right_eye = landmark['right_eye']
+
+        left = min(landmark['chin'], key=lambda i: i[0])
+        right = max(landmark['chin'], key=lambda i: i[0])
+        top = min(landmark['left_eyebrow'] + face_landmarks_list[0]['right_eyebrow'], key=lambda i: i[1])
+        bottom = max(landmark['chin'], key=lambda i: i[1])
 
         eye_left = get_eye(left_eye)
         eye_right = get_eye(right_eye)
         glasses = define_glasses(buffer, landmark)
+        rotation = get_rotation(landmark)
         responses.append(
             Response(
                 filename=filename,
                 left_eye_close=eye_left,
                 right_eye_close=eye_right,
-                face_location=location,
+                face_location=[top[1], right[0], bottom[1], left[0]],  # Response in face_recognition format
                 image_size=img.shape[:2],
                 glasses=glasses,
+                rotation=rotation,
                 task_id=task_id
             )
         )

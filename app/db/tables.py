@@ -3,6 +3,7 @@ import uuid
 from uuid import UUID
 from enum import Enum, auto
 
+from loguru import logger
 from sqlalchemy import bindparam
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
@@ -49,11 +50,13 @@ class TaskItem(Base):
     face_top: M[int | None]
     face_bottom: M[int | None]
     face_right: M[int | None]
-    is_face_small: M[bool | None]
+    rotation: M[float | None]
     image_width: M[int | None]
     image_height: M[int | None]
-    with_glasses: M[bool | None] = column(server_default=false(), default=False)
     image_index: M[int | None]
+    with_glasses: M[bool | None] = column(server_default=false(), default=False)
+    is_face_small: M[bool | None]
+    is_rotation_huge: M[bool | None]
     is_good: M[bool | None]
     error: M[str | None] = column(nullable=True)
 

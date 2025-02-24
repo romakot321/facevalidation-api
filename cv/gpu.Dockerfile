@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.2.0-cudnn8-devel AS compile
+FROM nvidia/cuda:11.2.2-cudnn8-devel-ubuntu20.04 AS compile
 
 # Install dependencies
 ENV DEBIAN_FRONTEND=noninteractive
@@ -56,14 +56,15 @@ COPY ./requirements.txt ./requirements.txt
 RUN pip3 wheel -r requirements.txt
 
 # Runtime Image
-FROM nvidia/cuda:11.2.0-cudnn8-runtime
-
+FROM nvidia/cuda:11.2.2-cudnn8-runtime-ubuntu20.04
 WORKDIR /app
 
 # Install requirements
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-distutils
+RUN apt-get install -y libwebp-dev ffmpeg libsm6 libxext6
+
 
 # Copy in libs
 COPY --from=compile /opt/venv /opt/venv

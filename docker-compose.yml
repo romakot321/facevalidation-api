@@ -21,8 +21,8 @@ services:
   cv:
     build:
       context: ./cv
-      dockerfile: ./cv/cpu.Dockerfile
-      # dockerfile: ./cv/gpu.Dockerfile
+      dockerfile: cpu.Dockerfile
+      # dockerfile: gpu.Dockerfile
     depends_on:
       - rabbitmq
     env_file:

@@ -2,8 +2,6 @@ from uuid import UUID
 from fastapi import Depends
 from loguru import logger
 
-from sqlalchemy_service.base_db.base import get_session as get_db_session
-
 from app.db.tables import Task, TaskItem
 from app.repositories.image import ImageRepository
 from app.repositories.cv import CVRepository
@@ -18,11 +16,10 @@ class TaskService:
             self,
             task_repository: TaskRepository = Depends(),
             task_item_repository: TaskItemRepository = Depends(),
-            image_repository: ImageRepository = Depends()
     ):
         self.task_repository = task_repository
         self.task_item_repository = task_item_repository
-        self.image_repository = image_repository
+        self.image_repository = ImageRepository()
 
     async def item_vote(self, item_id: int, value: bool):
         await self.task_item_repository.update(item_id, is_good=value)
@@ -55,7 +52,7 @@ class TaskService:
                            face_left=face.face_location[3], face_top=face.face_location[0],
                            face_right=face.face_location[1], face_bottom=face.face_location[2],
                            image_width=face.image_size[0], image_height=face.image_size[1],
-                           with_glasses=face.glasses, task_id=face.task_id,
+                           with_glasses=face.glasses, task_id=face.task_id, rotation=face.rotation,
                            image_index=int(face.filename.split(":")[1]),
                            error=face.error)
                 if face.image_size is not None else
@@ -73,15 +70,7 @@ class TaskService:
 
     @classmethod
     async def save_cv_response(cls, response: list[CVResponse]):
-        session_getter = get_db_session()
-        session = await anext(session_getter)
-        self = cls(image_repository=None, task_repository=TaskRepository(session=session))
-
-        await self._save_cv_response(response)
-
-        try:
-            await anext(session_getter)
-            await session.close()
-        except StopAsyncIteration:
-            pass
+        async with TaskRepository() as task_repository:
+            self = cls(task_repository=task_repository)
+            await self._save_cv_response(response)
 

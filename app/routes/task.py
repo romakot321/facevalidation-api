@@ -15,7 +15,7 @@ async def create_validation_task(
         background_tasks: BackgroundTasks,
         file: list[UploadFile],
         cv_repository: CVRepository = Depends(),
-        service: TaskService = Depends()
+        service: TaskService = Depends(TaskService)
 ):
     model = await service.create()
     for i, f in enumerate(file):
@@ -26,7 +26,7 @@ async def create_validation_task(
 @router.get("/{task_id}")
 async def get_task_status(
         task_id: UUID,
-        service: TaskService = Depends()
+        service: TaskService = Depends(TaskService)
 ):
     return await service.get(task_id)
 

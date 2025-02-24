@@ -1,3 +1,4 @@
+from loguru import logger
 from sqlalchemy_service import BaseService as BaseRepository
 from uuid import UUID
 
@@ -8,6 +9,7 @@ class TaskRepository[Table: Task, int](BaseRepository):
     base_table = Task
 
     async def create(self, model: Task) -> Task:
+        logger.debug("Add " + str(model))
         self.session.add(model)
         await self._commit()
         self.response.status_code = 201
@@ -18,6 +20,7 @@ class TaskRepository[Table: Task, int](BaseRepository):
         await self._commit()
 
     async def list(self, page=None, count=None) -> list[Task]:
+        logger.debug(self.engine.pool_size)
         return list(await self._get_list(page=page, count=count, select_in_load=Task.items))
 
     async def get(self, model_id: UUID) -> Task:

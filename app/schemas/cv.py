@@ -9,6 +9,7 @@ class CVResponse(BaseModel):
     face_location: list[int] | None = None
     image_size: list[int] | None = None
     glasses: bool | None = None
+    rotation: float | None = None
     error: str | None = None
 
 
