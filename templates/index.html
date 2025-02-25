@@ -24,7 +24,8 @@
                         <ul style="text-align: start">
                             <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
                             <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
-                            <li>Полупрофиль: {{ '✅' if item.is_rotation_huge else '❌'}}</li>
+                            <li>Профиль: {{ '✅' if item.is_profile else '❌'}}</li>
+                            <li>Полупрофиль: {{ '✅' if item.is_halfprofile else '❌'}}</li>
                             <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
                             {% if not item.is_good is none %}
                                 <li>Лайк: {{ '✅' if item.is_good else '❌'}}</li>

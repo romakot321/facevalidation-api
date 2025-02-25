@@ -9,7 +9,8 @@ class TaskItemShortSchema(BaseModel):
     is_eyes_closed: bool | None = None
     is_face_small: bool | None = None
     with_glasses: bool | None = None
-    is_rotation_huge: bool | None = None
+    is_profile: bool | None = None
+    is_halfprofile: bool | None = None
     image_index: int | None = None
     error: str | None = None
     is_good: bool | None = None
@@ -58,10 +59,17 @@ class TaskItemSchema(BaseModel):
 
     @computed_field
     @property
-    def is_rotation_huge(self) -> bool | None:
+    def is_profile(self) -> bool | None:
         if self.rotation is None:
             return None
-        return abs(self.rotation) > 0.4
+        return abs(self.rotation) > 0.17
+
+    @computed_field
+    @property
+    def is_halfprofile(self) -> bool | None:
+        if self.rotation is None:
+            return None
+        return abs(self.rotation) > 0.045
 
     model_config = ConfigDict(from_attributes=True)
 

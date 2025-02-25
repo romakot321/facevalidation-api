@@ -20,7 +20,8 @@
                         <li>Глаза закрыты: {{ '✅' if item.is_eyes_closed else '❌'}}</li>
                         <li>Лицо слишком маленькое: {{ '✅' if item.is_face_small else '❌'}}</li>
                         <li>Очки: {{ '✅' if item.with_glasses else '❌'}}</li>
-                        <li>Полупрофиль: {{ '✅' if item.is_rotation_huge else '❌'}}</li>
+                        <li>Профиль: {{ '✅' if item.is_profile else '❌'}}</li>
+                        <li>Полупрофиль: {{ '✅' if item.is_halfprofile else '❌'}}</li>
                         <li>Лайк:  {{ '✅' if item.is_good else '❌'}}</li>
                         <li>Координаты лица: X1 Y1={{ item.face_left }} {{ item.face_top }}, X2 Y2={{ item.face_right }} {{ item.face_bottom }}</li>
                         <li>Закрытость глаз: Левый: {{ item.left_eye_close }}, Правый: {{ item.right_eye_close }}</li>

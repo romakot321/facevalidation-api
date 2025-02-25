@@ -56,7 +56,8 @@ class TaskItem(Base):
     image_index: M[int | None]
     with_glasses: M[bool | None] = column(server_default=false(), default=False)
     is_face_small: M[bool | None]
-    is_rotation_huge: M[bool | None]
+    is_profile: M[bool | None]
+    is_halfprofile: M[bool | None]
     is_good: M[bool | None]
     error: M[str | None] = column(nullable=True)
 
