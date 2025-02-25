@@ -69,7 +69,7 @@ class TaskItemSchema(BaseModel):
     def is_halfprofile(self) -> bool | None:
         if self.rotation is None:
             return None
-        return abs(self.rotation) > 0.045
+        return 0.17 >= abs(self.rotation) > 0.045
 
     model_config = ConfigDict(from_attributes=True)
 
