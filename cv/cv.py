@@ -1,7 +1,7 @@
 from io import BytesIO
 import math
 import os
-import face_recognition
+import face_alignment
 import cv2
 import pika
 from scipy.spatial import distance as dist
@@ -10,6 +10,8 @@ import json
 from PIL import Image
 import numpy as np
 from typing import Union, List
+import collections
+import torch
 
 images_directory = "images/"
 rabbitmq_host = os.getenv("RABBITMQ_HOST")
@@ -32,6 +34,36 @@ class Response:
 class Request:
     filename: str
     task_id: str
+
+
+pred_type = collections.namedtuple('prediction_type', ['slice', 'color'])
+pred_types = {
+    'face': slice(0, 17),
+    'eyebrow1': slice(17, 22),
+    'eyebrow2': slice(22, 27),
+    'nose': slice(27, 31),
+    'nostril': slice(31, 36),
+    'eye1': slice(36, 42),
+    'eye2': slice(42, 48),
+    'lips': slice(48, 60),
+    'teeth': slice(60, 68)
+}
+
+if os.getenv("CPU"):
+    detector = face_alignment.FaceAlignment(
+        face_alignment.LandmarksType.TWO_D,
+        device='cpu',
+        flip_input=True,
+        face_detector="blazeface"
+    )
+else:
+    detector = face_alignment.FaceAlignment(
+        face_alignment.LandmarksType.TWO_D,
+        device='cuda',
+        dtype=torch.bfloat16,
+        flip_input=True,
+        face_detector="blazeface"
+    )
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -58,11 +90,12 @@ def get_eye(eye):
     return eye
 
 
-def define_glasses(image_buffer: BytesIO, landmarks: dict):
-    xmin = min(landmarks['nose_tip'], key=lambda i: i[0])[0]
-    xmax = max(landmarks['nose_tip'], key=lambda i: i[0])[0]
-    ymin = min(landmarks['left_eyebrow'], key=lambda i: i[1])[1]
-    ymax = max(landmarks['nose_bridge'], key=lambda i: i[1])[1]
+def define_glasses(image_buffer: BytesIO, landmarks: np.ndarray):
+    xmin = min(landmarks[pred_types['nostril']], key=lambda i: i[0])[0]
+    xmax = max(landmarks[pred_types['nostril']], key=lambda i: i[0])[0]
+    ymin = min(landmarks[pred_types['face']], key=lambda i: i[1])[1]
+    ymax = max(landmarks[pred_types['nostril']], key=lambda i: i[1])[1]
+    print("glasses", xmin, ymin, xmax, ymax)
 
     img2 = Image.open(image_buffer)
     img2 = img2.crop((xmin, ymin, xmax, ymax))
@@ -75,37 +108,36 @@ def define_glasses(image_buffer: BytesIO, landmarks: dict):
     return 255 in edges_center
 
 
-def get_rotation(face_landmarks) -> float:
-    """if abs(rotation) > 0.3, then face is rotated too much"""
-    left, right = (min(face_landmarks['chin'], key=lambda i: i[0]), max(face_landmarks['chin'], key=lambda i: i[0]))
-    left_eye_left = min(face_landmarks['left_eye'], key=lambda i: i[0])
-    right_eye_right = max(face_landmarks['right_eye'], key=lambda i: i[1])
-    width = right[0] - left[0]
-    distance_left = ((left_eye_left[0] - left[0]) ** 2 + (left_eye_left[1] - left[1]) ** 2) ** 0.5 / width
-    distance_right = ((right_eye_right[0] - right[0]) ** 2 + (right_eye_right[1] - right[1]) ** 2) ** 0.5 / width
-    rotate = 1 - distance_left / distance_right
-    return rotate
+def get_rotation(landmarks) -> float:
+    """if abs(rotation) > 0.17, then face is profile. If abs(rotation) > 0.045, then face is half-profile"""
+    face_points = landmarks[pred_types['face']]
+    left = face_points[0]
+    right = face_points[-1]
+    width = max(landmarks, key=lambda i: i[0])[0] - min(landmarks, key=lambda i: i[0])[0]
+
+    distance = ((left[0] - right[0]) ** 2 + (left[1] - right[1]) ** 2) ** 0.5
+    return 1 - distance / width
 
 
 def recognize(filename: str, task_id: str) -> List[Response]:
     responses = []
     with open(images_directory + filename, 'rb') as f:
         buffer = BytesIO(f.read())
-    img = face_recognition.load_image_file(buffer)
+    img = np.array(Image.open(buffer))
     image_width, image_height, _ = img.shape
 
-    face_landmarks_list = face_recognition.face_landmarks(img)
+    face_landmarks_list = detector.get_landmarks(img)
     if not face_landmarks_list:
         return [Response(filename=filename, task_id=task_id, error="Face not found")]
 
     for landmark in face_landmarks_list:
-        left_eye = landmark['left_eye']
-        right_eye = landmark['right_eye']
+        left_eye = landmark[pred_types['eye1']]
+        right_eye = landmark[pred_types['eye2']]
 
-        left = min(landmark['chin'], key=lambda i: i[0])
-        right = max(landmark['chin'], key=lambda i: i[0])
-        top = min(landmark['left_eyebrow'] + face_landmarks_list[0]['right_eyebrow'], key=lambda i: i[1])
-        bottom = max(landmark['chin'], key=lambda i: i[1])
+        left = min(landmark, key=lambda i: i[0])
+        right = max(landmark, key=lambda i: i[0])
+        top = min(landmark, key=lambda i: i[1])
+        bottom = max(landmark, key=lambda i: i[1])
 
         eye_left = get_eye(left_eye)
         eye_right = get_eye(right_eye)
@@ -114,12 +146,12 @@ def recognize(filename: str, task_id: str) -> List[Response]:
         responses.append(
             Response(
                 filename=filename,
-                left_eye_close=eye_left,
-                right_eye_close=eye_right,
-                face_location=[top[1], right[0], bottom[1], left[0]],  # Response in face_recognition format
+                left_eye_close=float(eye_left),
+                right_eye_close=float(eye_right),
+                face_location=[int(top[1]), int(right[0]), int(bottom[1]), int(left[0])],  # Response in face_recognition format
                 image_size=img.shape[:2],
                 glasses=glasses,
-                rotation=rotation,
+                rotation=float(rotation),
                 task_id=task_id
             )
         )

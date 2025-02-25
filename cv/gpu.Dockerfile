@@ -43,15 +43,14 @@ RUN pip3 install --upgrade pip && \
     pip3 install scikit-build
 
 # Install dlib
-ENV CFLAGS=-static
-RUN git clone -b 'v19.21' --single-branch https://github.com/davisking/dlib.git dlib/ && \
-    mkdir -p /dlib/build && \
-    cmake -H/dlib -B/dlib/build -DDLIB_USE_CUDA=1 -DUSE_AVX_INSTRUCTIONS=1 && \
-    cmake --build /dlib/build && \
-    cd /dlib && \
-    python3 /dlib/setup.py install --set BUILD_SHARED_LIBS=OFF
+# ENV CFLAGS=-static
+# RUN git clone -b 'v19.21' --single-branch https://github.com/davisking/dlib.git dlib/ && \
+#     mkdir -p /dlib/build && \
+#     cmake -H/dlib -B/dlib/build -DDLIB_USE_CUDA=1 -DUSE_AVX_INSTRUCTIONS=1 && \
+#     cmake --build /dlib/build && \
+#     cd /dlib && \
+#     python3 /dlib/setup.py install --set BUILD_SHARED_LIBS=OFF
 
-# Install face recognition
 COPY ./requirements.txt ./requirements.txt
 RUN pip3 wheel -r requirements.txt
 
