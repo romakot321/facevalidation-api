@@ -95,7 +95,6 @@ def define_glasses(image_buffer: BytesIO, landmarks: np.ndarray):
     xmax = max(landmarks[pred_types['nostril']], key=lambda i: i[0])[0]
     ymin = min(landmarks[pred_types['face']], key=lambda i: i[1])[1]
     ymax = max(landmarks[pred_types['nostril']], key=lambda i: i[1])[1]
-    print("glasses", xmin, ymin, xmax, ymax)
 
     img2 = Image.open(image_buffer)
     img2 = img2.crop((xmin, ymin, xmax, ymax))

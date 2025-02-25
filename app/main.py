@@ -73,7 +73,7 @@ def init_web_application():
 
 
 def run() -> FastAPI:
-    # logger.disable("sqlalchemy_service")
+    logger.disable("sqlalchemy_service")
     application = init_web_application()
     return application
 
