@@ -48,7 +48,14 @@ class TaskItemSchema(BaseModel):
     def is_face_small(self) -> bool | None:
         if self.face_right is None or self.face_left is None or self.image_width is None:
             return None
-        return (self.face_right - self.face_left) / self.image_width < 0.05
+        if self.image_width * self.image_height < 1000000:
+            return (self.face_right - self.face_left) / self.image_width < 0.125
+        elif 2000000 >= self.image_width * self.image_height >= 1000000:
+            return (self.face_right - self.face_left) / self.image_width < 0.111
+        elif 3000000 >= self.image_width * self.image_height >= 2000000:
+            return (self.face_right - self.face_left) / self.image_width < 0.1
+        else:
+            return (self.face_right - self.face_left) / self.image_width < 0.077
 
     @computed_field
     @property
