@@ -9,8 +9,10 @@ class ImageRepository:
     IMAGES_PATH = pathlib.Path(os.getenv("IMAGES_PATH", "images"))
 
     def store(self, body: bytes, filename: str):
-        with open(self.IMAGES_PATH / filename, 'wb') as f:
-            f.write(body)
+        im = Image.open(BytesIO(body))
+        if not im.mode == "RGB":
+            im = im.convert("RGB")
+        im.save(self.IMAGES_PATH / filename, "JPEG")
 
     def get(self, filename: str) -> BytesIO:
         with open(self.IMAGES_PATH / filename, 'rb') as f:

@@ -54,6 +54,7 @@ if os.getenv("CPU"):
         device="cpu",
         flip_input=True,
         face_detector="blazeface",
+        face_detector_kwargs={"min_score_thresh": 0.8, "min_suppression_threshold": 0.5}
     )
 else:
     detector = face_alignment.FaceAlignment(
@@ -141,7 +142,6 @@ def recognize(filename: str, task_id: str) -> List[Response]:
 
         eye_left = get_eye(left_eye)
         eye_right = get_eye(right_eye)
-        glasses = define_glasses(buffer, landmark)
         rotation = get_rotation(landmark)
         responses.append(
             Response(
@@ -155,7 +155,7 @@ def recognize(filename: str, task_id: str) -> List[Response]:
                     int(left[0]),
                 ],  # Response in face_recognition format
                 image_size=img.shape[:2],
-                glasses=glasses,
+                glasses=False,
                 rotation=float(rotation),
                 task_id=task_id,
             )
